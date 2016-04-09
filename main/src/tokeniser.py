@@ -2,29 +2,38 @@ import re
 import unittest
 
 def splitBySpaceAndPunctuation(line) :
-    punctuationMarks = r'[.?\-",!():;]'
-    specialSymbols = r'[$£%^&*¬+]'
+    specialSymbols = r'[.?\-",!():;$£%^&*¬+]'
+    capitalLetters= r'[A-Z]'
+    spacesInserted = 0
+    lineCopy = line
     for index,item in enumerate(line):
-        if re.search(specialSymbols, item):
-            line = insertSpaceIntoStringAfterItemAtSomeIndex(line, index)
 
-        if re.search(punctuationMarks,item) :
+        #separate punctuation but don't separate digits if there's punctuation between them
+        if re.search(specialSymbols,item) :
             if bothItemsAreNotDigits(line[index-1], item) :
-                line = insertSpaceIntoStringAfterItemAtSomeIndex(line, index)
-    print(line)
-    return line.split()
+                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index+spacesInserted)
+                spacesInserted = spacesInserted + 1
+
+        if re.search(capitalLetters, item) :
+            if re.search(specialSymbols, line[index+1]) : #if the next symbol after the capital letter is a special symbol
+                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + spacesInserted)
+                spacesInserted = spacesInserted + 1
+
+
+    print(lineCopy)
+    return lineCopy.split()
 
 def bothItemsAreNotDigits(prev, current) :
     digitRegex = '\d'
-    if prev != " ":
-        if not re.match(digitRegex, current) and not re.match(digitRegex, prev):
-            return True
+    if not re.match(digitRegex, current) and not re.match(digitRegex, prev):
+        return True
     return False
+
 
 def insertSpaceIntoStringAfterItemAtSomeIndex(line, index) :
     return line[:index+1] + " " + line[index+1:]
 
-splitBySpaceAndPunctuation("nh %5.55 dollars!")
+splitBySpaceAndPunctuation("s.+0")
 
 class TestTokeniser(unittest.TestCase):
 
