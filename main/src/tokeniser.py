@@ -5,60 +5,56 @@ def splitBySpaceAndPunctuation(line) :
     #regular expressions
     specialSymbols = r'[.?\",!():;$£%^&*¬+]'
     alphanumericalCharacters= r'[a-zA-Z0-9]'
-    apostrophe = r'[\']'
     capitalLetters = r'[A-Z]'
-    lowerCaseLetters = r'[a-z]'
     hyphen = r'[-]'
 
     modificationsMade = 0 #for indexing reasons
     lineCopy = line #copy of the original piece of text, needed for indexing reasons
     for index,item in enumerate(line):
-
-        #separate punctuation but doesn't separate digits if there's punctuation between them
-        if re.search(specialSymbols,item) :
-            if bothItemsAreNotDigits(line[index-1], item) :
-                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index+modificationsMade)
+        if index != 0: #cases where need to check the previous symbol before the actual item we're looking at
+            # dealing with possessive nouns in plural
+            if re.search('\'', item) and re.search('s', line[index - 1]):
+                lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy)
                 modificationsMade = modificationsMade + 1
 
-        if re.search(alphanumericalCharacters, item) and index != len(line) - 1:
-            if re.search(specialSymbols, line[index+1]) : #if the next symbol after the capital letter is a special symbol
-                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
-                modificationsMade = modificationsMade + 1
+            #dealing with possessive nouns in singular
+            if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index):
+                if (index + 1 <= len(line) - 1):
+                    if re.search(' ', line[index + 1]) or re.search('s', line[index + 1]):
+                        lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy)
+                        modificationsMade = modificationsMade + 1
 
-        #deal with last names and other cases where pattern is like [A-Z'A-Z]
-        if re.search(apostrophe, item) :
-            if index != 0 and index != len(line) -1 :
+            #dealing with cases like "don't", "doesn't"
+            if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index) and isItemSurroundedByCertainLetters('n', 't', line, index):
+                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
+                lineCopy = insertIdentifierAtIndex('o', index + 1 + modificationsMade, lineCopy)
+                modificationsMade = modificationsMade + 2
+
+
+            # deal with last names and other cases where pattern is like [A-Z'A-Z]
+            if re.search('\'', item) and index != len(line) -1 :
                 if re.search(capitalLetters, line[index-1]) and re.search(capitalLetters, line[index+1]) :
                     lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy,index+modificationsMade)
                     lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index-1 + modificationsMade)
                     modificationsMade = modificationsMade +2
 
-        #dealing with possession nouns and cases like 'doesn't'
-        if (re.search(apostrophe, item)) :
-            if index != 0 :
-                if re.search(lowerCaseLetters, line[index-1]) :
-                    if (index+1 <= len(line) - 1) :
-                        if re.search(' ', line[index+1]) or re.search('s', line[index+1]) :
-                            lineCopy = insertIdentifierAtIndex('(p)', index+modificationsMade, lineCopy)
-                            modificationsMade = modificationsMade + 1
-                        elif re.search('n', line[index - 1]) and re.search('t', line[index + 1]):
-                            lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
-                            lineCopy = insertIdentifierAtIndex('o', index+1+modificationsMade, lineCopy)
-                            modificationsMade = modificationsMade +2
-                    elif re.search('s', line[index-1]) :
-                        lineCopy = insertIdentifierAtIndex('(p)', index+modificationsMade, lineCopy)
-                        modificationsMade = modificationsMade + 1
-
-
-
-        #dealing with hyphens (e.g. up-to-date)
-        if (re.search(hyphen, item)) :
-            if (index!=0 and index+1<len(line)) :
-                if not re.search(alphanumericalCharacters, line[index-1]) and not re.search(alphanumericalCharacters, line[index+1]) :
+            # dealing with hyphens (e.g. up-to-date)
+            if (re.search(hyphen, item)):
+                if index + 1 < len(line) and not re.search(alphanumericalCharacters, line[index - 1]) and not re.search(alphanumericalCharacters, line[index + 1]):
                     lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
                     modificationsMade = modificationsMade + 1
 
 
+
+        #separate punctuation but doesn't separate digits if there's punctuation between them
+        if re.search(specialSymbols,item) and re.search(specialSymbols,item) and bothItemsAreNotDigits(line[index-1], item) :
+            lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index+modificationsMade)
+            modificationsMade = modificationsMade + 1
+
+        if re.search(alphanumericalCharacters, item) and index != len(line) - 1:
+            if re.search(specialSymbols, line[index+1]) : #if the next symbol after the capital letter is a special symbol
+                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
+                modificationsMade = modificationsMade + 1
 
 
     print(lineCopy)
@@ -75,6 +71,14 @@ def insertIdentifierAtIndex(identifer, index, line) :
 
 def insertSpaceIntoStringAfterItemAtSomeIndex(line, index) :
     return line[:index+1] + " " + line[index+1:]
+
+def isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, currentItemsIndex):
+    lowerCaseLetters = r'[a-z]'
+    apostrophe = r'[\']'
+    return (re.search(apostrophe, item)) and re.search(lowerCaseLetters, line[currentItemsIndex - 1])
+
+def isItemSurroundedByCertainLetters(letterOne, letterTwo, line, currentItemIndex) :
+    return re.search(letterOne, line[currentItemIndex - 1]) and re.search(letterTwo, line[currentItemIndex + 1])
 
 splitBySpaceAndPunctuation("doesn't")
 
