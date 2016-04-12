@@ -1,7 +1,9 @@
 import re
 import unittest
 
-def splitBySpaceAndPunctuation(line) :
+
+
+def tokenise(line) :
     #regular expressions
     specialSymbols = r'[.?\",!():;$£%^&*¬+]'
     alphanumericalCharacters= r'[a-zA-Z0-9]'
@@ -12,22 +14,13 @@ def splitBySpaceAndPunctuation(line) :
     lineCopy = line #copy of the original piece of text, needed for indexing reasons
     for index,item in enumerate(line):
         if index != 0: #cases where need to check the previous symbol before the actual item we're looking at
-            # dealing with possessive nouns in plural
-            if re.search('\'', item) and re.search('s', line[index - 1]):
-                lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy)
-                modificationsMade = modificationsMade + 1
+            lineCopy = dealWithPossessiveNouns(item, line, index, modificationsMade, lineCopy)
+            modificationsMade  = len(lineCopy) - len(line)
 
-            #dealing with possessive nouns in singular
-            if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index):
-                if (index + 1 <= len(line) - 1):
-                    if re.search(' ', line[index + 1]) or re.search('s', line[index + 1]):
-                        lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy)
-                        modificationsMade = modificationsMade + 1
-
-            #dealing with cases like "don't", "doesn't"
+            #dealing with negations like "don't", "doesn't"
             if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index) and isItemSurroundedByCertainLetters('n', 't', line, index):
                 lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
-                lineCopy = insertIdentifierAtIndex('o', index + 1 + modificationsMade, lineCopy)
+                lineCopy = insertIdentifierAtIndex('o', index + 1 + modificationsMade, lineCopy, False)
                 modificationsMade = modificationsMade + 2
 
 
@@ -65,8 +58,11 @@ def bothItemsAreNotDigits(prev, current) :
     if not re.match(digitRegex, current) and not re.match(digitRegex, prev):
         return True
     return False
-def insertIdentifierAtIndex(identifer, index, line) :
-    return line[:index] + identifer + line[index+len(identifer):]
+
+def insertIdentifierAtIndex(identifer, index, line, spaceAfterIdentifier) :
+    if spaceAfterIdentifier :
+        return line[:index] + identifer + " " + line[index+len(identifer):]
+    return line[:index] + identifer + line[index + len(identifer):]
 
 
 def insertSpaceIntoStringAfterItemAtSomeIndex(line, index) :
@@ -80,7 +76,21 @@ def isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, currentItemsInde
 def isItemSurroundedByCertainLetters(letterOne, letterTwo, line, currentItemIndex) :
     return re.search(letterOne, line[currentItemIndex - 1]) and re.search(letterTwo, line[currentItemIndex + 1])
 
-splitBySpaceAndPunctuation("doesn't")
+def dealWithPossessiveNouns(item, line, index, modificationsMade, lineCopy) :
+    # dealing with possessive nouns in plural
+    if re.search('\'', item) and re.search('s', line[index - 1]):
+        lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy, True)
+        modificationsMade = modificationsMade + 1
+
+    # dealing with possessive nouns in singular
+    if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index):
+        if (index + 1 <= len(line) - 1):
+            if re.search(' ', line[index + 1]) or re.search('s', line[index + 1]):
+                lineCopy = insertIdentifierAtIndex('(p)', index + modificationsMade, lineCopy, True)
+                modificationsMade = modificationsMade + 1
+    return lineCopy
+
+tokenise(" Vanya's doesn't")
 
 class TestTokeniser(unittest.TestCase):
 
@@ -96,17 +106,18 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(insertSpaceIntoStringAfterItemAtSomeIndex("hello", 10), "hello ")
 
     def testSplipBySpaceAndPunctuation(self):
-        self.assertEqual(splitBySpaceAndPunctuation("..."), '. . . '.split())
-        self.assertEqual(splitBySpaceAndPunctuation("Hello world."), 'Hello world .'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("J. Smith said that..."), 'J . Smith said that . . . '.split())
-        self.assertEqual(splitBySpaceAndPunctuation("O'Neill"), 'O \' Neill'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("Ivan's"), 'Ivan(p)'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("Jones\'"), 'Jones(p)'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("symbols (characters or word or phrases)."), 'symbols ( characters or word or phrases ) .'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("up-to-date"), 'up-to-date'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("New-York based"), 'New-York based'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("doesn't"), 'does not'.split())
-        self.assertEqual(splitBySpaceAndPunctuation("don't"), 'do not'.split())
+        self.assertEqual(tokenise("..."), '. . . '.split())
+        self.assertEqual(tokenise("Hello world."), 'Hello world .'.split())
+        self.assertEqual(tokenise("J. Smith said that..."), 'J . Smith said that . . . '.split())
+        self.assertEqual(tokenise("O'Neill"), 'O \' Neill'.split())
+        self.assertEqual(tokenise("Ivan's"), 'Ivan(p)'.split())
+        self.assertEqual(tokenise("Jones\'"), 'Jones(p)'.split())
+        self.assertEqual(tokenise("symbols (characters or word or phrases)."), 'symbols ( characters or word or phrases ) .'.split())
+        self.assertEqual(tokenise("up-to-date"), 'up-to-date'.split())
+        self.assertEqual(tokenise("New-York based"), 'New-York based'.split())
+        self.assertEqual(tokenise("doesn't"), 'does not'.split())
+        self.assertEqual(tokenise("don't"), 'do not'.split())
+        self.assertEqual(tokenise("Vanya's doesn't"), 'Vanya(p) does not'.split())
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
