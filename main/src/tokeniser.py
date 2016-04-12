@@ -3,11 +3,12 @@ import unittest
 
 def splitBySpaceAndPunctuation(line) :
     #regular expressions
-    specialSymbols = r'[.?\-",!():;$£%^&*¬+]'
+    specialSymbols = r'[.?\",!():;$£%^&*¬+]'
     alphanumericalCharacters= r'[a-zA-Z0-9]'
     apostrophe = r'[\']'
     capitalLetters = r'[A-Z]'
     lowerCaseLetters = r'[a-z]'
+    hyphen = r'[-]'
 
     modificationsMade = 0 #for indexing reasons
     lineCopy = line #copy of the original piece of text, needed for indexing reasons
@@ -32,17 +33,31 @@ def splitBySpaceAndPunctuation(line) :
                     lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index-1 + modificationsMade)
                     modificationsMade = modificationsMade +2
 
-        #dealing with possession nouns
+        #dealing with possession nouns and cases like 'doesn't'
         if (re.search(apostrophe, item)) :
             if index != 0 :
                 if re.search(lowerCaseLetters, line[index-1]) :
                     if (index+1 <= len(line) - 1) :
                         if re.search(' ', line[index+1]) or re.search('s', line[index+1]) :
-                            lineCopy = insertIdentifierAtIndex('(p)', index, lineCopy)
+                            lineCopy = insertIdentifierAtIndex('(p)', index+modificationsMade, lineCopy)
                             modificationsMade = modificationsMade + 1
+                        elif re.search('n', line[index - 1]) and re.search('t', line[index + 1]):
+                            lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
+                            lineCopy = insertIdentifierAtIndex('o', index+1+modificationsMade, lineCopy)
+                            modificationsMade = modificationsMade +2
                     elif re.search('s', line[index-1]) :
-                        lineCopy = insertIdentifierAtIndex('(p)', index, lineCopy)
+                        lineCopy = insertIdentifierAtIndex('(p)', index+modificationsMade, lineCopy)
                         modificationsMade = modificationsMade + 1
+
+
+
+        #dealing with hyphens (e.g. up-to-date)
+        if (re.search(hyphen, item)) :
+            if (index!=0 and index+1<len(line)) :
+                if not re.search(alphanumericalCharacters, line[index-1]) and not re.search(alphanumericalCharacters, line[index+1]) :
+                    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
+                    modificationsMade = modificationsMade + 1
+
 
 
 
@@ -61,7 +76,7 @@ def insertIdentifierAtIndex(identifer, index, line) :
 def insertSpaceIntoStringAfterItemAtSomeIndex(line, index) :
     return line[:index+1] + " " + line[index+1:]
 
-splitBySpaceAndPunctuation("O'Neill")
+splitBySpaceAndPunctuation("doesn't")
 
 class TestTokeniser(unittest.TestCase):
 
@@ -83,6 +98,12 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(splitBySpaceAndPunctuation("O'Neill"), 'O \' Neill'.split())
         self.assertEqual(splitBySpaceAndPunctuation("Ivan's"), 'Ivan(p)'.split())
         self.assertEqual(splitBySpaceAndPunctuation("Jones\'"), 'Jones(p)'.split())
+        self.assertEqual(splitBySpaceAndPunctuation("symbols (characters or word or phrases)."), 'symbols ( characters or word or phrases ) .'.split())
+        self.assertEqual(splitBySpaceAndPunctuation("up-to-date"), 'up-to-date'.split())
+        self.assertEqual(splitBySpaceAndPunctuation("New-York based"), 'New-York based'.split())
+        self.assertEqual(splitBySpaceAndPunctuation("doesn't"), 'does not'.split())
+        self.assertEqual(splitBySpaceAndPunctuation("don't"), 'do not'.split())
+
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
 unittest.TextTestRunner().run(suite)
