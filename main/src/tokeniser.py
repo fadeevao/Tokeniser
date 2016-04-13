@@ -2,6 +2,14 @@
 import re
 import unittest
 
+'''
+Tokenisation rules are following:
+- all punctuation marks are separated as tokens apart from the cases when they are parts of symbols (eg: up-to-date, $55, 5.44 and so on)
+- for all possessive nouns/pronouns (that we identify with 's or s' we add (p) and remove the 's' as we don't want it to be a separate token as it doesn't carry much meaning
+    examples of this would be: Jones\' -> Jones(p), Ivan's -> Ivan(p)
+- We deal with negations (such as 'doesn't') by separating them into 2 tokens such as: does, not  (special case for can't as it needs to turn into cannot)
+'''
+
 
 class TokenisationController() :
 
@@ -83,7 +91,11 @@ class TokenisationController() :
 
                 #dealing with negations like "don't", "doesn't"
                 if self.isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index) and self.isItemSurroundedByCertainLetters('n', 't', line, index):
-                    lineCopy = self.dealWithNegations(item, line, index, modificationsMade, lineCopy)
+                    print (line[index-3:index])
+                    if line[index-3:index] == 'can' : #deal with can't -> cannot
+                        lineCopy = lineCopy[:index] + 'not' + lineCopy[index+2:]
+                    else:
+                         lineCopy = self.dealWithNegations(item, line, index, modificationsMade, lineCopy)
 
                 # deal with last names and other cases where pattern is like [A-Z'A-Z]
                 if re.search('\'', item) and index != len(line) -1 :
@@ -144,6 +156,7 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(tokenisator.tokenise("don't"), 'do not'.split())
         self.assertEqual(tokenisator.tokenise("Vanya's doesn't"), 'Vanya(p) does not'.split())
         self.assertEqual(tokenisator.tokenise("Hey- you"), 'Hey - you'.split())
+        self.assertEqual(tokenisator.tokenise("can't"), 'cannot'.split())
 
 
 suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
