@@ -15,39 +15,30 @@ def tokenise(line) :
     for index,item in enumerate(line):
         if index != 0: #cases where need to check the previous symbol before the actual item we're looking at
             lineCopy = dealWithPossessiveNouns(item, line, index, modificationsMade, lineCopy)
-            modificationsMade  = len(lineCopy) - len(line)
 
             #dealing with negations like "don't", "doesn't"
             if isItemApostropheAndIsFollowedByLowerCaseLetters(item, line, index) and isItemSurroundedByCertainLetters('n', 't', line, index):
-                lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
-                lineCopy = insertIdentifierAtIndex('o', index + 1 + modificationsMade, lineCopy, False)
-                modificationsMade = modificationsMade + 2
-
+                lineCopy = dealWithNegations(item, line, index, modificationsMade, lineCopy)
 
             # deal with last names and other cases where pattern is like [A-Z'A-Z]
             if re.search('\'', item) and index != len(line) -1 :
                 if re.search(capitalLetters, line[index-1]) and re.search(capitalLetters, line[index+1]) :
-                    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy,index+modificationsMade)
-                    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index-1 + modificationsMade)
-                    modificationsMade = modificationsMade +2
+                    lineCopy = dealWithApostrophesInLastNames(index, modificationsMade, lineCopy)
 
             # dealing with hyphens (e.g. up-to-date)
             if (re.search(hyphen, item)):
                 if index + 1 < len(line) and not re.search(alphanumericalCharacters, line[index - 1]) and not re.search(alphanumericalCharacters, line[index + 1]):
                     lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
-                    modificationsMade = modificationsMade + 1
-
-
 
         #separate punctuation but doesn't separate digits if there's punctuation between them
         if re.search(specialSymbols,item) and re.search(specialSymbols,item) and bothItemsAreNotDigits(line[index-1], item) :
             lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index+modificationsMade)
-            modificationsMade = modificationsMade + 1
 
         if re.search(alphanumericalCharacters, item) and index != len(line) - 1:
             if re.search(specialSymbols, line[index+1]) : #if the next symbol after the capital letter is a special symbol
                 lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
-                modificationsMade = modificationsMade + 1
+
+        modificationsMade = len(lineCopy) - len(line)
 
 
     print(lineCopy)
@@ -90,6 +81,18 @@ def dealWithPossessiveNouns(item, line, index, modificationsMade, lineCopy) :
                 modificationsMade = modificationsMade + 1
     return lineCopy
 
+def dealWithApostrophesInLastNames(index, modificationsMade, lineCopy) :
+    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index + modificationsMade)
+    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 1 + modificationsMade)
+    return lineCopy
+
+
+def dealWithNegations(item, line, index, modificationsMade, lineCopy) :
+    lineCopy = insertSpaceIntoStringAfterItemAtSomeIndex(lineCopy, index - 2 + modificationsMade)
+    modificationsMade = modificationsMade + 1
+    lineCopy = insertIdentifierAtIndex('o', index + modificationsMade, lineCopy, False)
+    return lineCopy
+
 tokenise(" Vanya's doesn't")
 
 class TestTokeniser(unittest.TestCase):
@@ -105,7 +108,7 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(insertSpaceIntoStringAfterItemAtSomeIndex("hello", 2), "hel lo")
         self.assertEqual(insertSpaceIntoStringAfterItemAtSomeIndex("hello", 10), "hello ")
 
-    def testSplipBySpaceAndPunctuation(self):
+    def testTokenisation(self):
         self.assertEqual(tokenise("..."), '. . . '.split())
         self.assertEqual(tokenise("Hello world."), 'Hello world .'.split())
         self.assertEqual(tokenise("J. Smith said that..."), 'J . Smith said that . . . '.split())
