@@ -125,7 +125,3 @@ class TokenisationController() :
 
 controller = TokenisationController()
 controller.tokenise('he')
-
-
-suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
-unittest.TextTestRunner().run(suite)
