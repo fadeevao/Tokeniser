@@ -7,9 +7,10 @@ class TestTokeniser(unittest.TestCase):
     tokenisator = TokenisationController()
 
     def test_check_items_are_not_digits(self):
-        self.assertTrue(tokenisator.consecutive_characters_are_not_digits('a', 'b'))
-        self.assertFalse(tokenisator.consecutive_characters_are_not_digits('a', '1'))
-        self.assertFalse(tokenisator.consecutive_characters_are_not_digits('2', '1'))
+        digits = r'\d'
+        self.assertFalse(tokenisator.consecutive_characters_are_following_the_pattern('a', 'b', digits))
+        self.assertFalse(tokenisator.consecutive_characters_are_following_the_pattern('a', '1', digits))
+        self.assertTrue(tokenisator.consecutive_characters_are_following_the_pattern('2', '1', digits))
 
     def test_insert_space_into_string_after_some_index(self):
         self.assertEqual(tokenisator.insert_space_after_item_at_some_index("hello", 0), "h ello")
@@ -32,8 +33,8 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(tokenisator.tokenise("Vanya's doesn't"), 'Vanya(p) does not'.split())
         self.assertEqual(tokenisator.tokenise("Hey- you"), 'Hey - you'.split())
         self.assertEqual(tokenisator.tokenise("can't"), 'cannot'.split())
-
-
+        self.assertEqual(tokenisator.tokenise("U.K."), 'U.K.'.split())
+        self.assertEqual(tokenisator.tokenise("U.S.A."), 'U.S.A.'.split())
 
 # suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
 # unittest.TextTestRunner().run(suite)
