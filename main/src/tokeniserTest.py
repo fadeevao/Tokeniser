@@ -1,6 +1,7 @@
 import unittest
 from main.src.tokeniser import TokenisationController
 
+
 class TestTokeniser(unittest.TestCase):
 
     global tokenisator
@@ -17,6 +18,20 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(tokenisator.insert_space_after_item_at_some_index("hello", 1), "he llo")
         self.assertEqual(tokenisator.insert_space_after_item_at_some_index("hello", 2), "hel lo")
         self.assertEqual(tokenisator.insert_space_after_item_at_some_index("hello", 10), "hello ")
+
+    def test_consecutive_characters_are_following_the_pattern(self):
+        self.assertFalse(tokenisator.consecutive_characters_are_following_the_pattern("A", "B", r'\d'))
+        self.assertFalse(tokenisator.consecutive_characters_are_following_the_pattern("A", "77", r'\d'))
+        self.assertTrue(tokenisator.consecutive_characters_are_following_the_pattern("7.5", "5", r'\d'))
+        self.assertTrue(tokenisator.consecutive_characters_are_following_the_pattern("75", "5", r'\d'))
+
+    def test_hypnen_needs_spaces_around(self):
+        self.assertFalse(tokenisator.hypnen_needs_spaces_around("up-to", 2))
+        self.assertTrue(tokenisator.hypnen_needs_spaces_around("up- to", 2))
+
+    def test_insert_identifier_at_index(self):
+        self.assertEqual(tokenisator.insert_identifier_at_index("3", 0, "string", False), "3tring")
+        self.assertEqual(tokenisator.insert_identifier_at_index("3", 0, "string", True), "3 tring")
 
     def test_tokenisation(self):
         self.assertEqual(tokenisator.tokenise("..."), '. . . '.split())
@@ -35,8 +50,7 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(tokenisator.tokenise("can't"), 'cannot'.split())
         self.assertEqual(tokenisator.tokenise("U.K."), 'U.K.'.split())
         self.assertEqual(tokenisator.tokenise("U.S.A."), 'U.S.A.'.split())
+        self.assertEqual(tokenisator.tokenise("I.O.U."), "I.O.U.".split())
         self.assertEqual(tokenisator.tokenise("5.55"), '5.55'.split())
         self.assertEqual(tokenisator.tokenise("142.32.48.231"), "142.32.48.231".split())
-
-# suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
-# unittest.TextTestRunner().run(suite)
+        self.assertEqual(tokenisator.tokenise("Hewlett-Packard"), "Hewlett-Packard".split())

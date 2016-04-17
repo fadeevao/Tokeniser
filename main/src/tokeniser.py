@@ -3,10 +3,11 @@ import re
 
 '''
 Tokenisation rules are following:
-- all punctuation marks are separated as tokens apart from the cases when they are parts of symbols (eg: up-to-date, $55, 5.44 and so on)
+- all punctuation marks are separated as tokens
+- punctuation marks are not separated when we face double numbers, IP addresses, hyphenated names (eg Hewlett-Packard)
 - for all possessive nouns/pronouns (that we identify with 's or s' we add (p) and remove the 's' as we don't want it to be a separate token as it doesn't carry much meaning
     examples of this would be: Jones\' -> Jones(p), Ivan's -> Ivan(p)
-- We deal with negations (such as 'doesn't') by separating them into 2 tokens such as: does, not  (special case for can't as it needs to turn into cannot)
+- we deal with negations (such as 'doesn't') by separating them into 2 tokens such as: does, not  (special case for can't as it needs to turn into cannot)
 - identify acronyms such as U.K., U.S.A and so on and do not represent them as tokens
 '''
 
@@ -137,9 +138,4 @@ class TokenisationController() :
 
             modificationsMade = len(lineCopy) - len(line)
 
-
-        print(lineCopy)
         return lineCopy.split()
-
-controller = TokenisationController()
-controller.tokenise('5.55')
