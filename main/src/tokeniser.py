@@ -88,6 +88,7 @@ class TokenisationController() :
         capitalLetters = r'[A-Z]'
         hyphen = r'[-]'
         dot = r'[.]'
+        alphaCharacters = r'[a-zA-Z]'
 
         modificationsMade = 0 #for indexing reasons
         lineCopy = line #copy of the original piece of text, needed for indexing reasons
@@ -118,7 +119,7 @@ class TokenisationController() :
 
 
             #cater for cases when there are dots that are not surrounded by alphanumerical characters and that need to be separated
-            if re.search(dot, item) and not self.is_item_surrounded_by_matching_characters(index, line, capitalLetters):
+            if re.search(dot, item) and not self.is_item_surrounded_by_matching_characters(index, line, alphanumericalCharacters) :
                 lineCopy = self.insert_space_after_item_at_some_index(lineCopy, lineCopyIndex)
 
             #cater for acronyms - if we detect that we're looking at the acronym, then we remove a space that was previously added
@@ -130,7 +131,7 @@ class TokenisationController() :
                 lineCopy = self.insert_space_after_item_at_some_index(lineCopy, lineCopyIndex)
 
 
-            if re.search(alphanumericalCharacters, item) and index != len(line) - 1:
+            if re.search(alphaCharacters, item) and index != len(line) - 1:
                 if re.search(specialSymbols, line[index+1]) or re.search(dot, line[index+1]): #if the next symbol after the letter letter is a special symbol
                     lineCopy = self.insert_space_after_item_at_some_index(lineCopy, lineCopyIndex)
 
@@ -141,4 +142,4 @@ class TokenisationController() :
         return lineCopy.split()
 
 controller = TokenisationController()
-controller.tokenise('U.K.')
+controller.tokenise('5.55')

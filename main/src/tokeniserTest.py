@@ -35,6 +35,8 @@ class TestTokeniser(unittest.TestCase):
         self.assertEqual(tokenisator.tokenise("can't"), 'cannot'.split())
         self.assertEqual(tokenisator.tokenise("U.K."), 'U.K.'.split())
         self.assertEqual(tokenisator.tokenise("U.S.A."), 'U.S.A.'.split())
+        self.assertEqual(tokenisator.tokenise("5.55"), '5.55'.split())
+        self.assertEqual(tokenisator.tokenise("142.32.48.231"), "142.32.48.231".split())
 
 # suite = unittest.TestLoader().loadTestsFromTestCase(TestTokeniser)
 # unittest.TextTestRunner().run(suite)
